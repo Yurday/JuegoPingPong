@@ -30,6 +30,7 @@
         this.board = board;
         this.board.bars.push(this);
         this.kind = "rectangle";
+        this.speed = 10;
         
     }
 
@@ -70,18 +71,36 @@
      //Funcion que dibuja el board
      function draw(context,element){
         switch(element.kind){
-            case "square":
+            case "rectangle":
                 context.fillRect(element.x,element.y, element.width,element.height);
                 break;
         }
     }
 })();
 
+
+
 self.addEventListener("load",main);
 
 function main(){
-    console.log("Hola mundo");
+    
     var board = new Board(800,400);
+    var bar = new Bar(20,100,20,100,board);
+    var bar = new Bar(760,100,20,100,board);
     var canvas = document.getElementById('canvas');
     var board_view = new BoardView(canvas,board);
+
+//Configuracion para mover la barra
+document.addEventListener("keydown", function(ev){
+
+    if(ev.keyCode === 38){
+        //up
+        bar.up();
+    }
+    else if(ev.keyCode === 40){
+        //down
+        bar.down();
+    }
+
+});
 }
