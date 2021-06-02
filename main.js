@@ -8,14 +8,13 @@
         this.bars = [];
         this.ball = null;
         this.playing = false;
-        
     }
 
-       //Se crea para obtener los prototipos Getter de la clase Board
-       self.Board.prototype = {
+    //Se crea para obtener los prototipos Getter de la clase Board
+    self.Board.prototype = {
         get elements(){
-            var elements = this.bars;
-            elements.push(ball);
+            var elements = this.bars.map(function(bar){return bar;});
+            elements.push(this.ball);
             return elements;
         }
     }
@@ -39,7 +38,6 @@
         this.kind = "circle";        
     }
 
-
     //Funcion para mover la pelota
     self.Ball.prototype = {
         move: function(){
@@ -55,6 +53,29 @@
             return this.radius * 2;
         },
 
+        collition: function(bar){
+            //Reacciona a la colision con una barra que recibe como parametro
+            var relative_intersect_y = (bar.y + (bar.height / 2)) - this.y;
+
+            var normalized_intersect_y = relative_intersect_y / (bar.height / 2);
+
+            this.bounce_angle = normalized_intersect_y * this.max_bounce_angle;
+
+            this.speed_y = this.speed * -Math.sin(this.bounce_angle);
+            this.speed_x = this.speed * Math.cos(this.bounce_angle);
+
+            if(this.x > (this.board.width / 2))
+            {
+                this.direction = -1;
+            } 
+            else
+            {
+                this.direction = 1
+            } 
+        }
+    }
+})();
+
 //Constructor de la clase Bar
 (function(){
     self.Bar = function(x,y,width, height, board){
@@ -66,7 +87,6 @@
         this.board.bars.push(this);
         this.kind = "rectangle";
         this.speed = 10;
-        
     }
 
     //Para mover las barras
@@ -90,67 +110,101 @@
         this.canvas.width = board.width;
         this.canvas.height = board.height;
         this.board = board;
-        this.ctx = canvas.getContext("2d");
+        this.context = canvas.getContext("2d");
     }
 
     self.BoardView.prototype={
+        //limpia para ver el movimiento de la barra
+        clean: function(){
+            this.context.clearRect(0,0,this.board.width, this.board.height);
+        },
         draw: function(){
             for (var i = this.board.elements.length -1; i >= 0; i--) {
                 var el = this.board.elements[i];
 
                 draw(this.context,el);
             };
+        },
+
+        check_collitions: function(){
+            for (var i = this.board.bars.length -1; i >= 0; i--) {
+                var bar = this.board.bars[i];
+                if(hit(bar, this.board.ball))
+                {
+                    this.board.ball.collition(bar);
+                }
+                
+            };
+        },
+        //Metodo para jugar, limpia y dibuja el board
+        play: function(){
+            if(this.board.playing){
+                this.clean();
+                this.draw();
+                this.check_collitions();
+                this.board.ball.move();
+            }            
         }
-    },
-
-    check_collitions: function(){
-        for (var i = this.board.bars.length -1; i >= 0; i--) {
-            var bar = this.board.bars[i];
-            if(hit(bar, this.board.ball))
-            {
-                this.board.ball.collition(bar);
-            }
-            
-        };
-    },
-
-      //Metodo para jugar, limpia y dibuja el board
-      play: function(){
-        if(this.board.playing){
-            this.clean();
-            this.draw();
-            this.check_collitions();
-            this.board.ball.move();
-        }            
     }
-}
 
-     //Funcion que dibuja el board
-     function draw(context,element){
+    function hit(a,b){
+        //Revisa si a colisiona con b
+        var hit = false;
+        //Colisiones horizontales
+        if(b.x + b.width >= a.x && b.x < a.x + a.width)
+        {
+            //Colisiones verticales
+            if(b.y + b.height >= a.y && b.y < a.y + a.height)
+            {
+                hit = true;
+            }
+        }
+        //Colision de a con b
+        if(b.x <= a.x && b.x + b.width >= a.x + a.width)
+        {
+            if(b.y <= a.y && b.y + b.height >= a.y + a.height)
+            {
+                hit = true;
+            }
+        }
+        //Colision de b con a
+        if(a.x <= b.x && a.x + a.width >= b.x + b.width)
+        {
+            if(a.y <= b.y && a.y + a.height >= b.y + b.height)
+            {
+                hit = true;
+            }
+        }
+        return hit;
+    }
+
+    //Funcion que dibuja el board
+    function draw(context,element){
         switch(element.kind){
             case "rectangle":
                 context.fillRect(element.x,element.y, element.width,element.height);
                 break;
-        }
+            case "circle":
+                context.beginPath();
+                context.arc(element.x,element.y,element.radius,0,7);
+                context.fill();
+                context.closePath();
+                break;
+        }             
     }
 })();
 
+var board = new Board(800,400);
+var bar = new Bar(20,100,20,100,board);
+var bar_2 = new Bar(760,100,20,100,board);
+var canvas = document.getElementById('canvas');
+var board_view = new BoardView(canvas,board);
+var ball = new Ball(300, 100, 10, board);
 
-
-self.addEventListener("load",main);
-
-function main(){
-    
-    var board = new Board(800,400);
-    var bar = new Bar(20,100,20,100,board);
-    var bar_2 = new Bar(760,100,20,100,board);
-    var canvas = document.getElementById('canvas');
-    var board_view = new BoardView(canvas,board);
-    var ball = new Ball(300, 100, 10, board);
+window.requestAnimationFrame(controller);
 
 //Configuracion para mover la barra
 document.addEventListener("keydown", function(ev){
-
     if(ev.keyCode == 87){
         //W
         bar.up();
@@ -166,6 +220,19 @@ document.addEventListener("keydown", function(ev){
     else if(ev.keyCode === 40){
         //down
         bar_2.down();
-
+    }
+    else if(ev.keyCode === 32){
+        ev.preventDefault();
+        board.playing = !board.playing;
+    }
 });
+
+board_view.draw();
+window.requestAnimationFrame(controller);
+
+//Funcion principal para ejecutar todos los elementos
+function controller()
+{
+    board_view.play();
+    window.requestAnimationFrame(controller);
 }
