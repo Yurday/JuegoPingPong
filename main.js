@@ -7,6 +7,7 @@
         this.game_over = false;
         this.bars = [];
         this.ball = null;
+        this.playing = false;
         
     }
 
@@ -37,6 +38,22 @@
         board.ball = this;
         this.kind = "circle";        
     }
+
+
+    //Funcion para mover la pelota
+    self.Ball.prototype = {
+        move: function(){
+            this.x += (this.speed_x * this.direction);
+            this.y += (this.speed_y);
+        },
+
+        get width(){
+            return this.radius * 2;
+        },
+
+        get height(){
+            return this.radius * 2;
+        },
 
 //Constructor de la clase Bar
 (function(){
@@ -85,6 +102,28 @@
             };
         }
     },
+
+    check_collitions: function(){
+        for (var i = this.board.bars.length -1; i >= 0; i--) {
+            var bar = this.board.bars[i];
+            if(hit(bar, this.board.ball))
+            {
+                this.board.ball.collition(bar);
+            }
+            
+        };
+    },
+
+      //Metodo para jugar, limpia y dibuja el board
+      play: function(){
+        if(this.board.playing){
+            this.clean();
+            this.draw();
+            this.check_collitions();
+            this.board.ball.move();
+        }            
+    }
+}
 
      //Funcion que dibuja el board
      function draw(context,element){
