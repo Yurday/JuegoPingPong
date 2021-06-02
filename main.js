@@ -20,6 +20,24 @@
     }
 })();
 
+//Funcion de la pelota, constructor
+(function(){
+    self.Ball = function(x,y,radius,board){
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.speed_y = 0;
+        this.speed_x = 3;
+        this.board = board;
+        this.direction = 1;
+        this.bounce_angle = 0;
+        this.max_bounce_angle = Math.PI / 12;
+        this.speed = 3;
+
+        board.ball = this;
+        this.kind = "circle";        
+    }
+
 //Constructor de la clase Bar
 (function(){
     self.Bar = function(x,y,width, height, board){
@@ -86,21 +104,29 @@ function main(){
     
     var board = new Board(800,400);
     var bar = new Bar(20,100,20,100,board);
-    var bar = new Bar(760,100,20,100,board);
+    var bar_2 = new Bar(760,100,20,100,board);
     var canvas = document.getElementById('canvas');
     var board_view = new BoardView(canvas,board);
+    var ball = new Ball(300, 100, 10, board);
 
 //Configuracion para mover la barra
 document.addEventListener("keydown", function(ev){
 
+    if(ev.keyCode == 87){
+        //W
+        bar.up();
+    }
+    else if(ev.keyCode == 83){
+        //S
+        bar.down();
+    }
     if(ev.keyCode === 38){
         //up
-        bar.up();
+        bar_2.up();
     }
     else if(ev.keyCode === 40){
         //down
-        bar.down();
-    }
+        bar_2.down();
 
 });
 }
